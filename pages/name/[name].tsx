@@ -4,7 +4,7 @@ import { Container, Grid, Image, Text, Card, Button } from "@nextui-org/react";
 import { Layout } from "../../components/layouts";
 import { pokeApi } from "../../api";
 import { Pokemon } from "../../interfaces";
-import { localFavorites } from "../../utils";
+import { localFavorites, getPokemonInfo } from "../../utils";
 
 import confetti from "canvas-confetti";
 import { PokemonListResponse } from "../../interfaces/pokemon-list";
@@ -117,19 +117,21 @@ export const getStaticPaths: GetStaticPaths = async (ctx) => {
 
   return {
     paths: pokemonName.map((name) => ({ params: { name } })),
-    fallback: false,
+    fallback: "blocking",
   };
 };
 
 export const getStaticProps: GetStaticProps = async ({ params }) => {
   const { name } = params as { name: string };
-  const { data } = await pokeApi.get<Pokemon>(`/pokemon/${name}`);
-  const pokemon = {
-    id: data.id,
-    name: data.name,
-    sprites: data.sprites,
-  };
-
+  const pokemon = await getPokemonInfo(name);
+  if (!pokemon) {
+    return {
+      redirect: {
+        destination: "/",
+        permanent: false,
+      },
+    };
+  }
   return {
     props: {
       pokemon,
